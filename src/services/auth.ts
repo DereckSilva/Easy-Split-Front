@@ -1,7 +1,7 @@
 import api from "./api";
 
 export default async function auth (email: string, senha: string) {
-  const login = await api.post('/login', {email, senha}, 
+  const login = await api.post('/login', {'email': email, 'password': senha}, 
     {
     headers: {
       'Content-Type': 'application/json',

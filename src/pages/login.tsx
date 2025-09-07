@@ -6,11 +6,16 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { QueryClient, QueryClientProvider, useMutation } from '@tanstack/react-query';
 import ErrorComponent from '../components/error';
 import { useAuthStore } from '../store/store';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import LoadingComponent from '../components/loading';
 
 const schema = yup.object({
   email: yup.string().email('Email inválido').required('Email é obrigatório'),
-  password: yup.string().min(6, 'Senha deve ter pelo menos 6 caracteres').required('Senha é obrigatória'),
+  password: yup.string().min(6, "Senha deve ter pelo menos 6 caracteres")
+    .matches(/[A-Za-z]/, "Senha deve conter pelo menos uma letra")
+    .matches(/[0-9]/, "Senha deve conter pelo menos um número")
+    .matches(/[^A-Za-z0-9]/, "Senha deve conter pelo menos um símbolo")
+    .required("Senha é obrigatória")
 })
 
 type FormData = {
@@ -32,6 +37,8 @@ function User() {
   const { register, handleSubmit, formState: { errors } } = useForm({resolver: yupResolver(schema)});
   const errorUser = useAuthStore((state) => state.errorUser);
   const error     = useAuthStore((state) => state.error);
+  const login     = useAuthStore((state) => state.login);
+  const navigate = useNavigate();
 
   const { mutate, isPending } = useMutation({
     mutationFn: (data: FormData) => auth(data.email, data.password),
@@ -41,12 +48,16 @@ function User() {
           return;
         }
         console.log('Usuário autenticado com sucesso:', data);
+
+        // autentica o usuário
+        login(data.data.user, data.data.token.split('|')[1])
+        navigate('/')
       }, 
   })
 
 
   if (isPending) {
-    return <div>Carregando...</div>;
+   return <LoadingComponent />;
   }
 
   const onSubmit = async(data: FormData) => {

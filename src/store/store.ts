@@ -5,11 +5,13 @@ interface AuthStore {
   token: string | null;
   isAuthenticated: boolean;
   error: {message: string} | null;
+  data: {message: string} | null;
 
   login: (user: { id: number, email: string, name: string }, token: string) => void;
   logout: () => void;
   setToken: (token: string) => void;
   errorUser: (message: string) => void;
+  dataError: (message: string) => void;
 }
 
 export const useAuthStore = create<AuthStore>((set) => ({
@@ -17,10 +19,14 @@ export const useAuthStore = create<AuthStore>((set) => ({
   token: null,
   isAuthenticated: false,
   error: null,
-  
-  
+  data: null,
+
   errorUser: (message) => set({
     error: message ? { message } : null
+  }),
+
+  dataError: (message) => set({
+    data:  message ? { message } : null
   }),
 
   login: (user, token) => set({

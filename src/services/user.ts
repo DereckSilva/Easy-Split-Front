@@ -24,7 +24,7 @@ export async function cadastrar (email: string, password: string, name: string) 
   ).then((result) => {
     return result.data;
   }).catch((result) => {
-    return result.response.data;
+    return result.response;
   }).finally(() => {
     console.log('Requisição de cadastro finalizada');
   })
