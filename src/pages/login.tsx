@@ -42,17 +42,17 @@ function User() {
 
   const { mutate, isPending } = useMutation({
     mutationFn: (data: FormData) => auth(data.email, data.password),
-      onSuccess: (data) => {
-        if (!data.status) {
-          errorUser(data.message);
-          return;
-        }
-        console.log('Usuário autenticado com sucesso:', data);
+    onSuccess: (data) => {
+      if (!data.status) {
+        errorUser(data.message);
+        return;
+      }
+      console.log('Usuário autenticado com sucesso:', data);
 
-        // autentica o usuário
-        login(data.data.user, data.data.token.split('|')[1])
-        navigate('/')
-      }, 
+      // autentica o usuário
+      login(data.data.user, data.data.token.split('|')[1])
+      navigate('/')
+    }, 
   })
 
 

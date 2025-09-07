@@ -6,6 +6,7 @@ import ErrorComponent from "../components/error";
 import { useAuthStore } from "../store/store";
 import { cadTask } from "../services/tasks";
 import { Navigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 const schema = yup.object({
   title: yup.string().min(5, 'O título precisa ter no mínimo 6 caracteres').required('Insira um título para a sua tarefa.'),
@@ -65,6 +66,10 @@ function Task() {
         <label htmlFor="description">Descrição</label>
         <input type="text" {...register('description')} />
         {errors.description &&  <span className="text-red-500">{errors.description.message}</span>}
+
+        <Link to={'/'}>
+          <button>Home</button>
+        </Link>
 
         <button type="submit" className="p-4 bg-blue-700 text-white font-extrabold">Cadastrar</button>
       </form>
