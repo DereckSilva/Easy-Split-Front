@@ -17,12 +17,16 @@ const schema = yup.object({
   .matches(/[^A-Za-z0-9]/, "Senha deve conter pelo menos um símbolo")
   .required("Senha é obrigatória"),
   name: yup.string().min(6, "O nome do usuário deve conter no mínimo 5 caracteres").max(15, 'O nome do usuário deve conter no máximo 15 caracteres').required("Nome é obrigatório"),
+  birthdate: yup.date().required("Data de aniversário é obrigatória").max(new Date(), "Data não pode ser futura"),
+  role: yup.string().oneOf(["ADMIN", "USER"], "Função deve ser ADMIN ou USER").required("Função é obrigatória"),
 });
 
 type FormData = {
   email: string;
   password: string;
   name: string;
+  birthdate: Date;
+  role: string;
 }
 
 function RealizaCadastro () {
@@ -45,7 +49,7 @@ function Cadastrar() {
   const dataError = useAuthStore((state) => state.dataError)
 
   const { mutate, isPending } = useMutation({
-    mutationFn: (data: FormData) => cadastrar(data.email, data.password, data.name) ,
+    mutationFn: (data: FormData) => cadastrar(data.email, data.password, data.name, data.birthdate, data.role) ,
     onSuccess: (data) => {
       if (data.status == 400) {
         errorUser(data.data.message)
@@ -67,33 +71,119 @@ function Cadastrar() {
   }
 
  return (
-  <div className="flex flex-row items-center justify-center h-full bg-fuchsia-900 ">
-    <div className="flex justify-center items-center p-8 bg-white rounded-tl-4xl rounded-bl-4xl h-150 w-100">
-      Cadastrar usuario
-    { error?.message && <ErrorComponent message={error?.message}  data={data?.message}/> }
-    </div>
-    <form onSubmit={handleSubmit(handleRegister)}>
-      <div className="flex flex-col justify-center items-center bg-amber-400 h-150 w-150 p-6 rounded-tr-4xl rounded-br-4xl gap-2">
-        <div className="flex relative w-full">
-          <span className="absolute right-12 bottom-10">Já possui uma conta?</span>
-          <Link to="/login" className="absolute right-0 bottom-10 font-extrabold text-blue-900">
-            Login
-          </Link>
+  <div className="flex flex-row items-center justify-center h-full bg-gradient-to-r from-purple-600 to-indigo-700">
+    <div className="flex flex-col justify-center items-center p-8 bg-white rounded-tl-2xl rounded-bl-2xl h-150 w-96 shadow-lg">
+      <div className="flex flex-col items-center justify-center mb-6">
+        <div className="w-32 h-32 bg-purple-100 rounded-full flex items-center justify-center mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-20 w-20 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+          </svg>
         </div>
-        <div className="flex flex-col justify-center items-center gap-2 h-[420px] overflow-auto"> 
-          <label htmlFor="email">Nome</label>
-          <input placeholder="Digite..." className="w-48 border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" type="text" { ...register('name') }/>
-          {errors.name && <span className="text-red-500">{errors.name.message}</span>}
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">Crie sua conta</h2>
+        <p className="text-gray-600 text-center">Crie sua conta e organize suas finanças com mais eficiência.</p>
+      </div>
+    </div>
+    <form onSubmit={handleSubmit(handleRegister)} className="w-96">
+      <div className="flex flex-col justify-center items-center bg-white h-150 w-full p-8 rounded-tr-2xl rounded-br-2xl shadow-lg gap-4">
+        <h1 className="text-2xl font-bold text-gray-800 mb-2">Cadastro</h1>
+        {error?.message && (
+          <div className="w-full bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-4">
+            <p className="text-sm font-medium">{error.message}</p>
+            {data?.message && (
+              <p className="text-xs mt-1">{data.message}</p>
+            )}
+          </div>
+        )}
+        <div className="flex flex-col justify-center items-center w-full gap-3"> 
+          <div className="w-full relative">
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
+            <input 
+              placeholder="Digite seu nome" 
+              className={`w-full border ${errors.name ? 'border-red-300' : 'border-gray-300'} rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent`}
+              type="text" 
+              { ...register('name') }
+            />
+            {errors.name && (
+              <div className="absolute -bottom-2 right-0 z-10 bg-red-50 border border-red-200 text-red-600 text-xs px-2 py-1 rounded shadow-md transform translate-y-full">
+                {errors.name.message}
+              </div>
+            )}
+          </div>
 
-          <label htmlFor="email">Email</label>
-          <input placeholder="Digite..." className="w-48 border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" type="text" { ...register('email') }/>
-          {errors.email && <span className="text-red-500">{errors.email.message}</span>}
+          <div className="w-full relative">
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <input 
+              placeholder="Digite seu email" 
+              className={`w-full border ${errors.email ? 'border-red-300' : 'border-gray-300'} rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent`}
+              type="text" 
+              { ...register('email') }
+            />
+            {errors.email && (
+              <div className="absolute -bottom-2 right-0 z-10 bg-red-50 border border-red-200 text-red-600 text-xs px-2 py-1 rounded shadow-md transform translate-y-full">
+                {errors.email.message}
+              </div>
+            )}
+          </div>
 
-          <label htmlFor="email">Senha</label>
-          <input placeholder="Digite..." type="password" className="w-48 border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" { ...register('password') }/>
-          {errors.password && <span className="text-red-500">{errors.password.message}</span>}
-          <div className="flex flex-row gap-2">
-            <button type="submit" className="cursor-pointer bg-blue-600 text-white font-extrabold p-4 rounded-2xl">Cadastrar</button>
+          <div className="w-full relative">
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Senha</label>
+            <input 
+              placeholder="Digite sua senha" 
+              type="password" 
+              className={`w-full border ${errors.password ? 'border-red-300' : 'border-gray-300'} rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent`}
+              { ...register('password') }
+            />
+            {errors.password && (
+              <div className="absolute -bottom-2 right-0 z-10 bg-red-50 border border-red-200 text-red-600 text-xs px-2 py-1 rounded shadow-md transform translate-y-full">
+                {errors.password.message}
+              </div>
+            )}
+          </div>
+
+          <div className="w-full relative">
+            <label htmlFor="birthdate" className="block text-sm font-medium text-gray-700 mb-1">Data de Aniversário</label>
+            <input 
+              type="date" 
+              className={`w-full border ${errors.birthdate ? 'border-red-300' : 'border-gray-300'} rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent`}
+              { ...register('birthdate', { valueAsDate: true }) }
+            />
+            {errors.birthdate && (
+              <div className="absolute -bottom-2 right-0 z-10 bg-red-50 border border-red-200 text-red-600 text-xs px-2 py-1 rounded shadow-md transform translate-y-full">
+                {errors.birthdate.message}
+              </div>
+            )}
+          </div>
+
+          <div className="w-full relative">
+            <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">Função</label>
+            <select 
+              className={`w-full border ${errors.role ? 'border-red-300' : 'border-gray-300'} rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent`}
+              { ...register('role') }
+            >
+              <option value="">Selecione uma função</option>
+              <option value="ADMIN">ADMIN</option>
+              <option value="USER">USER</option>
+            </select>
+            {errors.role && (
+              <div className="absolute -bottom-2 right-0 z-10 bg-red-50 border border-red-200 text-red-600 text-xs px-2 py-1 rounded shadow-md transform translate-y-full">
+                {errors.role.message}
+              </div>
+            )}
+          </div>
+          
+          <div className="flex flex-col w-full gap-3 mt-4">
+            <button 
+              type="submit" 
+              className="w-full cursor-pointer bg-purple-600 hover:bg-purple-700 transition-colors text-white font-semibold py-3 px-4 rounded-lg shadow-md"
+            >
+              Criar conta
+            </button>
+            <div className="text-center mt-2">
+              <span className="text-gray-600">Já possui uma conta? </span>
+              <Link to="/login" className="text-purple-600 hover:text-purple-800 font-medium">
+                Entrar
+              </Link>
+            </div>
           </div>
         </div>
       </div>
