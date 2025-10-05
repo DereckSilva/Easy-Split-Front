@@ -22,7 +22,7 @@ export async function cadastrar (email: string, password: string, name: string, 
       'Accept': 'application/json'
     }}
   ).then((result) => {
-    return result.data;
+    return {data: result.data, status: result.status};
   }).catch((result) => {
     return result.response;
   }).finally(() => {

@@ -12,7 +12,7 @@ export default async function auth (email: string, senha: string) {
       return result.data
     })
     .catch((result) => {
-      return result.response ? result.response.data : { message: 'Erro de autenticação' };
+      return result.response.status != 403 ? result.response : { message: 'Erro de autenticação. E-mail ou senha incorretos.', status: result.response.status };
     })
     .finally(() => {
       console.log('Requisição finalizada')

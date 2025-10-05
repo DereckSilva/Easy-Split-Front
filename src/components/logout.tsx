@@ -26,7 +26,7 @@ export default function LogoutComponent() {
               Confirmar saída
             </button>
           </Link>
-          <Link to="/home">
+          <Link to="/">
             <button className="px-6 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors duration-300 shadow-md hover:shadow-lg">
               Cancelar
             </button>

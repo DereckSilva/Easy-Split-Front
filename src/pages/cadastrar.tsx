@@ -5,19 +5,18 @@ import * as yup from "yup";
 import { cadastrar } from "../services/user";
 import LoadingComponent from "../components/loading";
 import { Link } from "react-router-dom";
-import { useAuthStore } from "../store/store";
-import ErrorComponent from "../components/error";
-import { useCreatedUserStore } from "../store/userStore";
+import { useCreatedUserMessageStore } from "../store/userStore";
 const queryClient = new QueryClient();
 
 const schema = yup.object({
   email: yup.string().email("Email inválido").required("Email é obrigatório"),
-  password: yup.string().min(6, "Senha deve ter pelo menos 6 caracteres")
+  password: yup.string().min(8, "Senha deve ter pelo menos 8 caracteres")
+  .max(16, "Senha deve ter no máximo 16 caracteres")
   .matches(/[A-Za-z]/, "Senha deve conter pelo menos uma letra")
   .matches(/[0-9]/, "Senha deve conter pelo menos um número")
   .matches(/[^A-Za-z0-9]/, "Senha deve conter pelo menos um símbolo")
   .required("Senha é obrigatória"),
-  name: yup.string().min(6, "O nome do usuário deve conter no mínimo 5 caracteres").max(15, 'O nome do usuário deve conter no máximo 15 caracteres').required("Nome é obrigatório"),
+  name: yup.string().min(8, "O nome do usuário deve conter no mínimo 8 caracteres").max(16, 'O nome do usuário deve conter no máximo 16 caracteres').required("Nome é obrigatório"),
   birthdate: yup.date().typeError("Data Inválida").required('Data de nascimento é obrigatória').max(new Date(), "Data não pode ser futura").default(new Date()),
   role: yup.string().oneOf(["ADMIN", "USER"], "Função deve ser ADMINITRADOR ou USUÁRIO")
     .required("Função é obrigatória"),
@@ -44,16 +43,36 @@ function RealizaCadastro () {
 function Cadastrar() {
 
   const { register, handleSubmit, formState: { errors } } = useForm({resolver: yupResolver(schema)})
-  const birthdate = useCreatedUserStore((state) => state.birthdate)
-  const setBirthdate = useCreatedUserStore((state) => state.setBirthdate)
-
+  const birthdate = useCreatedUserMessageStore((state) => state.birthdate)
+  const setBirthdate = useCreatedUserMessageStore((state) => state.setBirthdate)
+  const name = useCreatedUserMessageStore((state) => state.name)
+  const setName = useCreatedUserMessageStore((state) => state.setName)
+  const email = useCreatedUserMessageStore((state) => state.email)
+  const setEmail = useCreatedUserMessageStore((state) => state.setEmail)
+  const password = useCreatedUserMessageStore((state) => state.password)
+  const setPassword = useCreatedUserMessageStore((state) => state.setPassword)
+  const role = useCreatedUserMessageStore((state) => state.role)
+  const setRole = useCreatedUserMessageStore((state) => state.setRole)
+  const error = useCreatedUserMessageStore((state) => state.error)
+  const setError = useCreatedUserMessageStore((state) => state.setError)
+  const message = useCreatedUserMessageStore((state) => state.message)
+  const setMessage = useCreatedUserMessageStore((state) => state.setMessage)
+  const setInitializeAttributes = useCreatedUserMessageStore((state) => state.setInitializeAttributes)
 
   const { mutate, isPending, isSuccess } = useMutation({
     mutationFn: (data: FormData) => cadastrar(data.email, data.password, data.name, data.birthdate, data.role) ,
     onSuccess: (data) => {
       if (data.status == 400) {
+        setError(true)
         setBirthdate(data.data.birthdate)
-        console.log(birthdate)
+        setName(data.data.name)
+        setEmail(data.data.email)
+        setPassword(data.data.password)
+        setRole(data.data.role)
+        setMessage(data.data.message)
+      }
+      if (data.status == 201) {
+        setInitializeAttributes()
       }
     },
   })
@@ -78,7 +97,7 @@ function Cadastrar() {
           </div>
           <h2 className="text-3xl font-bold text-gray-800 mb-4 text-center">Crie sua conta</h2>
           <p className="text-gray-600 text-center leading-relax max-width-md">
-            Junte-se à nossa plataforma e organize suas tarefas de forma mais eficiente e produtiva.
+            Junte-se à nossa plataforma e organize suas contas de forma mais eficiente e produtiva.
           </p>
         </div>
       </div>
@@ -103,12 +122,12 @@ function Cadastrar() {
                 type="text" 
                 {...register('name')}
               />
-              {errors.name && (
+              {(errors.name || name) && (
                 <p className="text-sm text-red-600 mt-1 flex items-center gap-1">
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                   </svg>
-                  {errors.name.message}
+                  {errors.name ? errors.name.message : name}
                 </p>
               )}
             </div>
@@ -125,12 +144,12 @@ function Cadastrar() {
                 type="email" 
                 {...register('email')}
               />
-              {errors.email && (
+              {(errors.email || email) && (
                 <p className="text-sm text-red-600 mt-1 flex items-center gap-1">
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                   </svg>
-                  {errors.email.message}
+                  {errors.email ? errors.email.message : email}
                 </p>
               )}
             </div>
@@ -147,12 +166,12 @@ function Cadastrar() {
                 }`}
                 {...register('password')}
               />
-              {errors.password && (
+              {(errors.password || password) && (
                 <p className="text-sm text-red-600 mt-1 flex items-center gap-1">
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                   </svg>
-                  {errors.password.message}
+                  {errors.password ? errors.password.message : password}
                 </p>
               )}
             </div>
@@ -168,12 +187,12 @@ function Cadastrar() {
                 }`}
                 {...register('birthdate', { valueAsDate: true })}
               />
-              {errors.birthdate && (
+              {(errors.birthdate || birthdate) && (
                 <p className="text-sm text-red-600 mt-1 flex items-center gap-1">
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                   </svg>
-                  {errors.birthdate.message}
+                  {errors.birthdate ? errors.birthdate.message : birthdate}
                 </p>
               )}
             </div>
@@ -193,18 +212,27 @@ function Cadastrar() {
                 <option value="USER">Usuário</option>
               </select>
             </div>
-            {errors.role && (
+            {(errors.role || role) && (
                 <p className="text-sm text-red-600 mt-1 flex items-center gap-1">
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                   </svg>
-                  {errors.role.message}
+                  {errors.role ? errors.role.message : role}
+                </p>
+              )}
+
+              {message && (
+                <p className="space-y-4 pt-4 text-sm text-red-600 mt-1 flex items-center gap-1">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {message}
                 </p>
               )}
           </div>
           
           <div className="space-y-4 pt-4">
-            {isSuccess ? (
+            {isSuccess && !error ? (
                 <div className="text-center">
                   <span className="text-purple-600 font-extrabold">Usuário cadastrado com sucesso! </span>
                   <Link 
