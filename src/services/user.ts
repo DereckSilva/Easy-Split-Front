@@ -16,7 +16,7 @@ export async function getUser(id: number) {
 }
 
 export async function cadastrar (email: string, password: string, name: string, birthdate: Date, role: string) {
-  const response = await api.post('/user/register/', { email, password, name, birthdate, role}, 
+  const response = await api.post('/user/register', { email, password, name, birthdate, role}, 
     { headers: {
       'Content-Type': 'application/json',
       'Accept': 'application/json'

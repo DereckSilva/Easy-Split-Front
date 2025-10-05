@@ -3,10 +3,11 @@ import { QueryClient, QueryClientProvider, useMutation } from "@tanstack/react-q
 import { useForm } from "react-hook-form";
 import * as yup from "yup";
 import { cadastrar } from "../services/user";
-import ErrorComponent from "../components/error";
 import LoadingComponent from "../components/loading";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuthStore } from "../store/store";
+import ErrorComponent from "../components/error";
+import { useCreatedUserStore } from "../store/userStore";
 const queryClient = new QueryClient();
 
 const schema = yup.object({
@@ -17,8 +18,9 @@ const schema = yup.object({
   .matches(/[^A-Za-z0-9]/, "Senha deve conter pelo menos um símbolo")
   .required("Senha é obrigatória"),
   name: yup.string().min(6, "O nome do usuário deve conter no mínimo 5 caracteres").max(15, 'O nome do usuário deve conter no máximo 15 caracteres').required("Nome é obrigatório"),
-  birthdate: yup.date().required("Data de aniversário é obrigatória").max(new Date(), "Data não pode ser futura"),
-  role: yup.string().oneOf(["ADMIN", "USER"], "Função deve ser ADMIN ou USER").required("Função é obrigatória"),
+  birthdate: yup.date().typeError("Data Inválida").required('Data de nascimento é obrigatória').max(new Date(), "Data não pode ser futura").default(new Date()),
+  role: yup.string().oneOf(["ADMIN", "USER"], "Função deve ser ADMINITRADOR ou USUÁRIO")
+    .required("Função é obrigatória"),
 });
 
 type FormData = {
@@ -42,24 +44,18 @@ function RealizaCadastro () {
 function Cadastrar() {
 
   const { register, handleSubmit, formState: { errors } } = useForm({resolver: yupResolver(schema)})
-  const navigate = useNavigate();
-  const errorUser = useAuthStore((state) => state.errorUser);
-  const error     = useAuthStore((state) => state.error);
-  const data      = useAuthStore((state) => state.data);
-  const dataError = useAuthStore((state) => state.dataError)
+  const birthdate = useCreatedUserStore((state) => state.birthdate)
+  const setBirthdate = useCreatedUserStore((state) => state.setBirthdate)
 
-  const { mutate, isPending } = useMutation({
+
+  const { mutate, isPending, isSuccess } = useMutation({
     mutationFn: (data: FormData) => cadastrar(data.email, data.password, data.name, data.birthdate, data.role) ,
     onSuccess: (data) => {
       if (data.status == 400) {
-        errorUser(data.data.message)
-        dataError(data.data.data.email)
-        return 
+        setBirthdate(data.data.birthdate)
+        console.log(birthdate)
       }
-      console.log('Usuário cadastrado com sucesso:', data);
-
-      navigate('/login')
-    }
+    },
   })
 
   if (isPending) {
@@ -71,123 +67,180 @@ function Cadastrar() {
   }
 
  return (
-  <div className="flex flex-row items-center justify-center h-full bg-gradient-to-r from-purple-600 to-indigo-700">
-    <div className="flex flex-col justify-center items-center p-8 bg-white rounded-tl-2xl rounded-bl-2xl h-150 w-96 shadow-lg">
-      <div className="flex flex-col items-center justify-center mb-6">
-        <div className="w-32 h-32 bg-purple-100 rounded-full flex items-center justify-center mb-4">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-20 w-20 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-          </svg>
+  <div className="min-h-screen bg-gradient-to-r from-purple-600 to-indigo-700 flex items-center justify-center p-4">
+    <div className="w-full max-w-4xl flex flex-col lg:flex-row bg-white rounded-2xl shadow-2xl overflow-hidden">
+      <div className="lg:w-1/2 flex flex-col justify-center items-center p-8 bg-gradient-to-br from-purple-50 to-indigo-50">
+        <div className="flex flex-col items-center justify-center mb-6">
+          <div className="w-24 h-24 bg-purple-100 rounded-full flex items-center justify-center mb-6">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+            </svg>
+          </div>
+          <h2 className="text-3xl font-bold text-gray-800 mb-4 text-center">Crie sua conta</h2>
+          <p className="text-gray-600 text-center leading-relax max-width-md">
+            Junte-se à nossa plataforma e organize suas tarefas de forma mais eficiente e produtiva.
+          </p>
         </div>
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">Crie sua conta</h2>
-        <p className="text-gray-600 text-center">Crie sua conta e organize suas finanças com mais eficiência.</p>
       </div>
-    </div>
-    <form onSubmit={handleSubmit(handleRegister)} className="w-96">
-      <div className="flex flex-col justify-center items-center bg-white h-150 w-full p-8 rounded-tr-2xl rounded-br-2xl shadow-lg gap-4">
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">Cadastro</h1>
-        {error?.message && (
-          <div className="w-full bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-4">
-            <p className="text-sm font-medium">{error.message}</p>
-            {data?.message && (
-              <p className="text-xs mt-1">{data.message}</p>
-            )}
-          </div>
-        )}
-        <div className="flex flex-col justify-center items-center w-full gap-3"> 
-          <div className="w-full relative">
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
-            <input 
-              placeholder="Digite seu nome" 
-              className={`w-full border ${errors.name ? 'border-red-300' : 'border-gray-300'} rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent`}
-              type="text" 
-              { ...register('name') }
-            />
-            {errors.name && (
-              <div className="absolute -bottom-2 right-0 z-10 bg-red-50 border border-red-200 text-red-600 text-xs px-2 py-1 rounded shadow-md transform translate-y-full">
-                {errors.name.message}
-              </div>
-            )}
+
+      <div className="lg:w-1/2 p-8">
+        <form onSubmit={handleSubmit(handleRegister)} className="space-y-6">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-800">Cadastro</h1>
+            <p className="text-gray-600 mt-2">Preencha os dados abaixo para criar sua conta</p>
           </div>
 
-          <div className="w-full relative">
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            <input 
-              placeholder="Digite seu email" 
-              className={`w-full border ${errors.email ? 'border-red-300' : 'border-gray-300'} rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent`}
-              type="text" 
-              { ...register('email') }
-            />
-            {errors.email && (
-              <div className="absolute -bottom-2 right-0 z-10 bg-red-50 border border-red-200 text-red-600 text-xs px-2 py-1 rounded shadow-md transform translate-y-full">
-                {errors.email.message}
-              </div>
-            )}
-          </div>
+          <div className="space-y-5">
+            <div className="space-y-2">
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                Nome Completo
+              </label>
+              <input 
+                placeholder="Digite seu nome completo" 
+                className={`w-full border rounded-lg px-4 py-3 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
+                  errors.name ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-gray-400'
+                }`}
+                type="text" 
+                {...register('name')}
+              />
+              {errors.name && (
+                <p className="text-sm text-red-600 mt-1 flex items-center gap-1">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {errors.name.message}
+                </p>
+              )}
+            </div>
 
-          <div className="w-full relative">
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Senha</label>
-            <input 
-              placeholder="Digite sua senha" 
-              type="password" 
-              className={`w-full border ${errors.password ? 'border-red-300' : 'border-gray-300'} rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent`}
-              { ...register('password') }
-            />
-            {errors.password && (
-              <div className="absolute -bottom-2 right-0 z-10 bg-red-50 border border-red-200 text-red-600 text-xs px-2 py-1 rounded shadow-md transform translate-y-full">
-                {errors.password.message}
-              </div>
-            )}
-          </div>
+            <div className="space-y-2">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                Email
+              </label>
+              <input 
+                placeholder="Digite seu email" 
+                className={`w-full border rounded-lg px-4 py-3 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
+                  errors.email ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-gray-400'
+                }`}
+                type="email" 
+                {...register('email')}
+              />
+              {errors.email && (
+                <p className="text-sm text-red-600 mt-1 flex items-center gap-1">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {errors.email.message}
+                </p>
+              )}
+            </div>
 
-          <div className="w-full relative">
-            <label htmlFor="birthdate" className="block text-sm font-medium text-gray-700 mb-1">Data de Aniversário</label>
-            <input 
-              type="date" 
-              className={`w-full border ${errors.birthdate ? 'border-red-300' : 'border-gray-300'} rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent`}
-              { ...register('birthdate', { valueAsDate: true }) }
-            />
-            {errors.birthdate && (
-              <div className="absolute -bottom-2 right-0 z-10 bg-red-50 border border-red-200 text-red-600 text-xs px-2 py-1 rounded shadow-md transform translate-y-full">
-                {errors.birthdate.message}
-              </div>
-            )}
-          </div>
+            <div className="space-y-2">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                Senha
+              </label>
+              <input 
+                placeholder="Digite sua senha" 
+                type="password" 
+                className={`w-full border rounded-lg px-4 py-3 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
+                  errors.password ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-gray-400'
+                }`}
+                {...register('password')}
+              />
+              {errors.password && (
+                <p className="text-sm text-red-600 mt-1 flex items-center gap-1">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {errors.password.message}
+                </p>
+              )}
+            </div>
 
-          <div className="w-full relative">
-            <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">Função</label>
-            <select 
-              className={`w-full border ${errors.role ? 'border-red-300' : 'border-gray-300'} rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent`}
-              { ...register('role') }
-            >
-              <option value="">Selecione uma função</option>
-              <option value="ADMIN">ADMIN</option>
-              <option value="USER">USER</option>
-            </select>
+            <div className="space-y-2">
+              <label htmlFor="birthdate" className="block text-sm font-medium text-gray-700">
+                Data de Nascimento
+              </label>
+              <input 
+                type="date"
+                className={`w-full border rounded-lg px-4 py-3 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
+                  errors.birthdate ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-gray-400'
+                }`}
+                {...register('birthdate', { valueAsDate: true })}
+              />
+              {errors.birthdate && (
+                <p className="text-sm text-red-600 mt-1 flex items-center gap-1">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {errors.birthdate.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="role" className="block text-sm font-medium text-gray-700">
+                Função
+              </label>
+              <select 
+                className={`w-full border rounded-lg px-4 py-3 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
+                  errors.role ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-gray-400'
+                }`}
+                {...register('role')}
+              >
+                <option value="">Selecione uma função</option>
+                <option value="ADMIN">Administrador</option>
+                <option value="USER">Usuário</option>
+              </select>
+            </div>
             {errors.role && (
-              <div className="absolute -bottom-2 right-0 z-10 bg-red-50 border border-red-200 text-red-600 text-xs px-2 py-1 rounded shadow-md transform translate-y-full">
-                {errors.role.message}
-              </div>
-            )}
+                <p className="text-sm text-red-600 mt-1 flex items-center gap-1">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {errors.role.message}
+                </p>
+              )}
           </div>
           
-          <div className="flex flex-col w-full gap-3 mt-4">
-            <button 
-              type="submit" 
-              className="w-full cursor-pointer bg-purple-600 hover:bg-purple-700 transition-colors text-white font-semibold py-3 px-4 rounded-lg shadow-md"
-            >
-              Criar conta
-            </button>
-            <div className="text-center mt-2">
-              <span className="text-gray-600">Já possui uma conta? </span>
-              <Link to="/login" className="text-purple-600 hover:text-purple-800 font-medium">
-                Entrar
-              </Link>
-            </div>
+          <div className="space-y-4 pt-4">
+            {isSuccess ? (
+                <div className="text-center">
+                  <span className="text-purple-600 font-extrabold">Usuário cadastrado com sucesso! </span>
+                  <Link 
+                    to="/login"
+                    className="text-purple-600 hover:text-purple-700 font-semibold transition-colors duration-200 underline underline-offset-2"
+                  >
+                    Entrar
+                  </Link>
+                </div>
+            ) : 
+              (
+                <>
+                  <button 
+                    type="submit" 
+                    className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-500 transition-all duration-200 text-white font-semibold py-3 px-4 rounded-lg shadow-lg transform hover:shadow-xl hover:-translate-y-0.5 disabled:transform-none disabled:shadow-lg"
+                  >
+                      Criar Conta
+                  </button>
+                  
+                  <div className="text-center">
+                    <span className="text-gray-600">Já possui uma conta? </span>
+                    <Link 
+                      to="/login" 
+                      className="text-purple-600 hover:text-purple-700 font-semibold transition-colors duration-200 underline underline-offset-2"
+                    >
+                      Entre aqui
+                    </Link>
+                  </div>
+                </>
+              )
+            }
+
           </div>
-        </div>
+        </form>
       </div>
-    </form>
+    </div>
   </div>
  )  
 }
